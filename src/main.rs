@@ -1,4 +1,7 @@
-use iracing_api::{model::season_results::EventType, IracingApiClient};
+use iracing_api::{
+    model::season_results::{EventType, SeasonResultsQuery},
+    IracingApiClient,
+};
 
 use color_eyre::eyre::Result;
 
@@ -15,7 +18,7 @@ async fn main() -> Result<()> {
 
     let response = client
         .season_results(
-            iracing_api::client::SeasonResultsQuery::new(2345)
+            SeasonResultsQuery::new(2345)
                 .event_type(EventType::Race)
                 .race_week_num(5),
         )

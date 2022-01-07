@@ -1,0 +1,11 @@
+{
+    "authcode": "authcode",
+    "autoLoginSeries": null,
+    "autoLoginToken": null,
+    "custId": 123456,
+    "email": "email@example.com",
+    "ssoCookieDomain": ".iracing.com",
+    "ssoCookieName": "irsso_membersv2",
+    "ssoCookiePath": "/",
+    "ssoCookieValue": "sso cookie value"
+}

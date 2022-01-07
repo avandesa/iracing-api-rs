@@ -14,6 +14,7 @@ pub struct AuthRequestBody {
 
 /// The response returned by the authentication endpoint when authentication is
 /// successful for not
+#[derive(Debug, Clone, PartialEq)]
 pub enum AuthResponse {
     Success(AuthSuccessBody),
     Failure(AuthFailureBody),
@@ -47,7 +48,7 @@ impl AuthResponse {
 }
 
 /// The response body returned by iRacing when authenciation succeeds
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct AuthSuccessBody {
     #[serde(rename = "authcode")]
     pub auth_code: String,
@@ -71,7 +72,7 @@ pub struct AuthSuccessBody {
 }
 
 /// The response body returned by iRacing when authentication fails
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct AuthFailureBody {
     /// Appears to always be `0` when auth fails
     pub authcode: u32,
@@ -123,5 +124,48 @@ pub struct AuthError {
 impl fmt::Display for AuthError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Authentication failed: {}", self.kind)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::AuthResponse;
+    #[test]
+    fn auth_response_from_json_success() {
+        let json_value: serde_json::Value =
+            serde_json::from_str(include_str!("../../test_files/auth/success.json")).unwrap();
+        assert!(matches!(
+            AuthResponse::from_json(json_value),
+            AuthResponse::Success(_),
+        ));
+    }
+
+    #[test]
+    fn auth_response_from_json_failure() {
+        let raw_json = "{
+            \"authcode\": 0,
+            \"inactive\": false,
+            \"message\": \"Invalid email address or password. Please try again.\",
+            \"verificationRequired\": false
+        }";
+        let json_value: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+        assert!(matches!(
+            AuthResponse::from_json(json_value),
+            AuthResponse::Failure(_),
+        ));
+    }
+
+    #[test]
+    #[should_panic]
+    fn auth_response_from_json_missing_authcode() {
+        let json_value: serde_json::Value = serde_json::from_str("{}").unwrap();
+        AuthResponse::from_json(json_value);
+    }
+
+    #[test]
+    #[should_panic]
+    fn auth_response_from_json_invalid_authcode() {
+        let json_value: serde_json::Value = serde_json::from_str("{ \"authcode\": [] }").unwrap();
+        AuthResponse::from_json(json_value);
     }
 }
