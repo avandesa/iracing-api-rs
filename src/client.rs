@@ -50,6 +50,7 @@ impl IracingApiClient {
         match AuthResponse::from_json(auth_response) {
             AuthResponse::Success(auth) => Ok(IracingApiClient { reqwest, auth }),
             AuthResponse::Failure(body) => {
+                // Match on the error message returned from iRacing
                 let err_kind = match body.message.as_str() {
                     "Invalid email address or password. Please try again." => {
                         AuthErrorKind::InvalidCredentials
@@ -57,6 +58,7 @@ impl IracingApiClient {
                     "Missing auth identifier." => AuthErrorKind::MissingAuthIdentifier,
                     "Verification required." => AuthErrorKind::VerificationRequired,
                     other => {
+                        // This should be considered a bug
                         AuthErrorKind::Unknown(format!("Unknown auth failure message: {}", other))
                     }
                 };

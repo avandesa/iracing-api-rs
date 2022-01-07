@@ -5,18 +5,26 @@ use {
     thiserror::Error,
 };
 
+/// Contains authentication credentials used to login to iRacing
 #[derive(Serialize, Debug, Clone)]
 pub struct AuthRequestBody {
     pub email: String,
     pub password: String,
 }
 
+/// The response returned by the authentication endpoint when authentication is
+/// successful for not
 pub enum AuthResponse {
     Success(AuthSuccessBody),
     Failure(AuthFailureBody),
 }
 
 impl AuthResponse {
+    /// Interpret a raw json value as either an [AuthSuccessBody] or [AuthFailureBody]
+    ///
+    /// # Panics
+    ///
+    /// This function panics if the response structure doesn't match what iRacing usually returns
     pub fn from_json(value: serde_json::Value) -> Self {
         match value
             .get("authcode")
@@ -38,6 +46,7 @@ impl AuthResponse {
     }
 }
 
+/// The response body returned by iRacing when authenciation succeeds
 #[derive(Deserialize, Debug, Clone)]
 pub struct AuthSuccessBody {
     #[serde(rename = "authcode")]
@@ -61,11 +70,16 @@ pub struct AuthSuccessBody {
     pub sso_cookie_value: String,
 }
 
+/// The response body returned by iRacing when authentication fails
 #[derive(Deserialize, Debug, Clone)]
 pub struct AuthFailureBody {
+    /// Appears to always be `0` when auth fails
     pub authcode: u32,
+    /// The message describing what went wrong
     pub message: String,
+    /// Probably refers to the user's subscription status
     pub inactive: bool,
+    /// Indicates whether or not the user needs to login through the web client
     #[serde(rename = "verificationRequired")]
     pub verification_required: bool,
 }
@@ -96,8 +110,11 @@ pub enum AuthErrorKind {
     Unknown(String),
 }
 
+/// An authentication error, including the detected cause and the response
+/// returned by iRacing
 #[derive(Error, Debug, Clone)]
 pub struct AuthError {
+    /// What caused the authentication failure
     #[source]
     pub kind: AuthErrorKind,
     pub body: AuthFailureBody,
