@@ -1,4 +1,7 @@
-use serde::{Deserialize, Serialize};
+use {
+    chrono::{DateTime, Utc},
+    serde::{Deserialize, Serialize},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Car {
@@ -16,7 +19,7 @@ pub struct Car {
     car_types: Vec<CarType>,
     car_weight: u32,
     categories: Vec<String>,
-    created: String, // timestamp
+    created: DateTime<Utc>,
     free_with_subscription: bool,
     has_headlights: bool,
     has_multiple_dry_tire_types: bool,

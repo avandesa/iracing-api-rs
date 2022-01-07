@@ -1,4 +1,7 @@
-use serde::{Deserialize, Serialize};
+use {
+    chrono::{DateTime, Utc},
+    serde::{Deserialize, Serialize},
+};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SessionResult {
@@ -21,10 +24,9 @@ pub struct SessionResult {
     pub license_category: String,
     pub license_category_id: u32,
 
-    #[serde(default)]
-    pub private_session_id: Option<u32>,
-    pub start_time: String, // timestamp
-    pub end_time: String,   // TODO: Convert to timestamp
+    pub private_session_id: i32,
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
 
     pub num_laps_for_qual_average: u32,
     pub num_laps_for_solo_average: u32,
@@ -125,7 +127,7 @@ pub struct SubsessionDriverResult {
     pub best_lap_time: i32,
     pub best_nlaps_num: i32,
     pub best_nlaps_time: i32,
-    pub best_qual_lap_at: String, // TODO: timestamp
+    pub best_qual_lap_at: DateTime<Utc>,
     pub best_qual_lap_num: i32,
     pub best_qual_lap_time: i32,
     pub car_class_id: i32,
@@ -239,10 +241,10 @@ pub struct TrackState {
 pub struct Weather {
     fog: i32,
     rel_humidity: i32,
-    simulated_start_utc_offset: i32,  // Offset
-    simulated_start_utc_time: String, // Timestamp
-    skies: i32,                       // enum?
-    temp_units: i32,                  // enum?
+    simulated_start_utc_offset: i32, // Offset
+    simulated_start_utc_time: DateTime<Utc>,
+    skies: i32,      // enum?
+    temp_units: i32, // enum?
     temp_value: i32,
     time_of_day: i32,
     r#type: i32, // enum?

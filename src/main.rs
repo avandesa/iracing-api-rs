@@ -1,7 +1,4 @@
-use iracing_api::{
-    model::season_results::{EventType, SeasonResultsQuery},
-    IracingApiClient,
-};
+use iracing_api::IracingApiClient;
 
 use color_eyre::eyre::Result;
 
@@ -16,17 +13,12 @@ async fn main() -> Result<()> {
     let client = IracingApiClient::new(&email, &password).await?;
     println!("Logged in!");
 
-    let response = client
-        .season_results(
-            SeasonResultsQuery::new(2345)
-                .event_type(EventType::Race)
-                .race_week_num(5),
-        )
-        .await?;
-    dbg!(response.results_list.len());
-
-    let cars = client.all_cars().await?;
-    dbg!(cars.len(), &cars[0]);
+    let response = client.session_results(38280997, true).await?;
+    dbg!(
+        response.start_time,
+        response.end_time,
+        &response.session_results[0]
+    );
 
     Ok(())
 }
