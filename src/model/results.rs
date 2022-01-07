@@ -24,7 +24,7 @@ pub struct SessionResult {
     #[serde(default)]
     pub private_session_id: Option<u32>,
     pub start_time: String, // timestamp
-    pub end_time: String,       // TODO: Convert to timestamp
+    pub end_time: String,   // TODO: Convert to timestamp
 
     pub num_laps_for_qual_average: u32,
     pub num_laps_for_solo_average: u32,
@@ -67,8 +67,6 @@ pub struct SessionResult {
     pub race_summary: Option<RaceSummary>,
 
     pub results_restricted: bool,
-
-
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
