@@ -1,9 +1,5 @@
-use crate::{
-    auth::{AuthRequestBody, AuthResponseBody},
-    model::*,
-    Result,
-};
-use {reqwest::Client, serde::Deserialize};
+use crate::model::{auth::*, *};
+use {color_eyre::eyre::Result, reqwest::Client, serde::Deserialize, thiserror::Error};
 
 #[derive(Deserialize, Debug, Clone)]
 struct LinkResponseBody {
@@ -12,13 +8,32 @@ struct LinkResponseBody {
 
 pub struct IracingApiClient {
     reqwest: Client,
-    _auth: AuthResponseBody,
 }
 
 impl IracingApiClient {
-    pub async fn new(email: &str, password: &str) -> Result<Self> {
+    /// Create a new iRacing API client and authenticate with the iRacing service.
+    ///
+    /// # Errors
+    ///
+    /// This method fails if a TLS backend cannot be initialized, or the resolver cannot load the system configuration.
+    ///
+    /// This method may also fail if one of the following issues occurs during authentication
+    ///
+    /// - The provided email & password are invalid
+    /// - The provided email is malformed
+    /// - iRacing decides to require manual login verification for the user
+    /// 
+    /// See the documentation of [AuthError] for more details
+    ///
+    /// # Panics
+    ///
+    /// Panics if an unknown error occurs while authenticating
+    pub async fn new(email: &str, password: &str) -> Result<Self, ClientInitError> {
+        // Initialize a reqwest client with a cookie store enabled
         let reqwest = Client::builder().cookie_store(true).build()?;
-        let auth = reqwest
+
+        // Attempt to authenticate with iRacing
+        let auth_response_body = reqwest
             .post("https://members-ng.iracing.com/auth")
             .json(&AuthRequestBody {
                 email: email.to_string(),
@@ -26,12 +41,39 @@ impl IracingApiClient {
             })
             .send()
             .await?
-            .json::<AuthResponseBody>()
+            .json::<serde_json::Map<String, serde_json::Value>>()
             .await?;
-        Ok(Self {
-            reqwest,
-            _auth: auth,
-        })
+
+        // TODO: write a manual deserializer or something for the auth response
+        // body that can distinguish between a success and a failure
+
+        match auth_response_body
+            .get("authcode")
+            .expect("Field \"authcode\" missing from response body")
+        {
+            serde_json::Value::String(_) => Ok(Self { reqwest }),
+            serde_json::Value::Number(_) => {
+                let err = match auth_response_body
+                    .get("message")
+                    .map(serde_json::Value::as_str)
+                    .flatten()
+                    .expect("Field \"message\" missing from response body")
+                {
+                    "Invalid email address or password. Please try again." => {
+                        AuthError::InvalidCredentials
+                    }
+                    "Missing auth identifier." => AuthError::MissingAuthIdentifier,
+                    "Verification required." => AuthError::VerificationRequired,
+                    other => AuthError::Unknown(format!("Unknown auth failure message: {}", other)),
+                };
+
+                Err(err.into())
+            }
+            invalid_authcode => panic!(
+                "\"authcode\" is not a `String` or `Number`; actual value: {:?}",
+                invalid_authcode
+            ),
+        }
     }
 
     pub async fn session_results(
@@ -110,4 +152,12 @@ impl SeasonResultsQuery {
         self.race_week_num = Some(race_week_num);
         self
     }
+}
+
+#[derive(Error, Debug)]
+pub enum ClientInitError {
+    #[error("cannot initialize HTTP client")]
+    ReqwestError(#[from] reqwest::Error),
+    #[error("authentication with iRacing failed")]
+    AuthenticationFailure(#[from] AuthError),
 }

@@ -1,11 +1,18 @@
 use iracing_api::{model::season_results::EventType, IracingApiClient};
 
+use color_eyre::eyre::Result;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
+    color_eyre::install()?;
+    dotenv::dotenv()?;
+
     let email = std::env::var("IRACING_EMAIL").unwrap();
     let password = std::env::var("IRACING_PASSWORD").unwrap();
 
     let client = IracingApiClient::new(&email, &password).await?;
+    println!("Logged in!");
+
     let response = client
         .season_results(
             iracing_api::client::SeasonResultsQuery::new(2345)
@@ -14,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    println!("{:#?}", response);
+    dbg!(response.results_list.len());
 
     Ok(())
 }
