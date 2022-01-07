@@ -23,8 +23,10 @@ async fn main() -> Result<()> {
                 .race_week_num(5),
         )
         .await?;
-
     dbg!(response.results_list.len());
+
+    let cars = client.all_cars().await?;
+    dbg!(cars.len(), &cars[0]);
 
     Ok(())
 }

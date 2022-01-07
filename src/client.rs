@@ -109,6 +109,20 @@ impl IracingApiClient {
 
         Ok(data)
     }
+
+    pub async fn all_cars(&self) -> Result<Vec<car::Car>> {
+        let response: LinkResponseBody = self
+            .reqwest
+            .get("https://members-ng.iracing.com/data/car/get")
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let data = self.reqwest.get(response.link).send().await?.json().await?;
+
+        Ok(data)
+    }
 }
 
 #[derive(Error, Debug)]
