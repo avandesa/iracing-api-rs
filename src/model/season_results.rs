@@ -15,35 +15,35 @@ pub enum EventType {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SeasonResults {
-    results_list: Vec<Session>,
-    event_type: EventType,
-    success: bool,
-    season_id: u32,
-    race_week_num: Option<u32>,
+    pub results_list: Vec<Session>,
+    pub event_type: EventType,
+    pub success: bool,
+    pub season_id: u32,
+    pub race_week_num: Option<u32>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Session {
-    race_week_num: u32,
-    event_type: EventType,
-    event_type_name: String,
-    start_time: String, // timestamp
-    session_id: u32,
-    subsession_id: u32,
-    official_session: bool,
-    event_strength_of_field: i32,
-    event_best_lap_time: i32,
-    num_cautions: i32,
-    num_caution_laps: i32,
-    num_drivers: u32,
-    track: Track,
+    pub race_week_num: u32,
+    pub event_type: EventType,
+    pub event_type_name: String,
+    pub start_time: String, // timestamp
+    pub session_id: u32,
+    pub subsession_id: u32,
+    pub official_session: bool,
+    pub event_strength_of_field: i32,
+    pub event_best_lap_time: i32,
+    pub num_cautions: i32,
+    pub num_caution_laps: i32,
+    pub num_drivers: u32,
+    pub track: Track,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Track {
-    track_id: u32,
-    track_name: String,
-    config_name: Option<String>,
+    pub track_id: u32,
+    pub track_name: String,
+    pub config_name: Option<String>,
 }
 
 impl fmt::Display for EventType {
