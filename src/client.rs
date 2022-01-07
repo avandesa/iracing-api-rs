@@ -6,8 +6,11 @@ struct LinkResponseBody {
     link: String,
 }
 
+/// An authenticated iRacing API client
 pub struct IracingApiClient {
     reqwest: Client,
+    /// The data returned by iRacing after authentication
+    pub auth: AuthSuccessBody,
 }
 
 impl IracingApiClient {
@@ -22,18 +25,18 @@ impl IracingApiClient {
     /// - The provided email & password are invalid
     /// - The provided email is malformed
     /// - iRacing decides to require manual login verification for the user
-    /// 
+    ///
     /// See the documentation of [AuthError] for more details
     ///
     /// # Panics
     ///
-    /// Panics if an unknown error occurs while authenticating
+    /// Panics if the HTTP response from iRacing is malformed
     pub async fn new(email: &str, password: &str) -> Result<Self, ClientInitError> {
         // Initialize a reqwest client with a cookie store enabled
         let reqwest = Client::builder().cookie_store(true).build()?;
 
         // Attempt to authenticate with iRacing
-        let auth_response_body = reqwest
+        let auth_response = reqwest
             .post("https://members-ng.iracing.com/auth")
             .json(&AuthRequestBody {
                 email: email.to_string(),
@@ -41,38 +44,27 @@ impl IracingApiClient {
             })
             .send()
             .await?
-            .json::<serde_json::Map<String, serde_json::Value>>()
+            .json::<serde_json::Value>()
             .await?;
 
-        // TODO: write a manual deserializer or something for the auth response
-        // body that can distinguish between a success and a failure
-
-        match auth_response_body
-            .get("authcode")
-            .expect("Field \"authcode\" missing from response body")
-        {
-            serde_json::Value::String(_) => Ok(Self { reqwest }),
-            serde_json::Value::Number(_) => {
-                let err = match auth_response_body
-                    .get("message")
-                    .map(serde_json::Value::as_str)
-                    .flatten()
-                    .expect("Field \"message\" missing from response body")
-                {
+        match AuthResponse::from_json(auth_response) {
+            AuthResponse::Success(auth) => Ok(IracingApiClient { reqwest, auth }),
+            AuthResponse::Failure(body) => {
+                let err_kind = match body.message.as_str() {
                     "Invalid email address or password. Please try again." => {
-                        AuthError::InvalidCredentials
+                        AuthErrorKind::InvalidCredentials
                     }
-                    "Missing auth identifier." => AuthError::MissingAuthIdentifier,
-                    "Verification required." => AuthError::VerificationRequired,
-                    other => AuthError::Unknown(format!("Unknown auth failure message: {}", other)),
+                    "Missing auth identifier." => AuthErrorKind::MissingAuthIdentifier,
+                    "Verification required." => AuthErrorKind::VerificationRequired,
+                    other => {
+                        AuthErrorKind::Unknown(format!("Unknown auth failure message: {}", other))
+                    }
                 };
-
-                Err(err.into())
+                Err(ClientInitError::AuthenticationFailure(AuthError {
+                    kind: err_kind,
+                    body,
+                }))
             }
-            invalid_authcode => panic!(
-                "\"authcode\" is not a `String` or `Number`; actual value: {:?}",
-                invalid_authcode
-            ),
         }
     }
 
@@ -156,8 +148,8 @@ impl SeasonResultsQuery {
 
 #[derive(Error, Debug)]
 pub enum ClientInitError {
-    #[error("cannot initialize HTTP client")]
+    #[error("Cannot initialize HTTP client")]
     ReqwestError(#[from] reqwest::Error),
-    #[error("authentication with iRacing failed")]
+    #[error("Authentication with iRacing failed")]
     AuthenticationFailure(#[from] AuthError),
 }
