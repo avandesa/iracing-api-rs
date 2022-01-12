@@ -1,4 +1,5 @@
 use crate::model::{auth::*, *};
+use std::collections::HashMap;
 use {eyre::Result, reqwest::Client, serde::Deserialize, thiserror::Error};
 
 #[derive(Deserialize, Debug, Clone)]
@@ -127,6 +128,37 @@ impl IracingApiClient {
         let data = self.reqwest.get(response.link).send().await?.json().await?;
 
         Ok(data)
+    }
+
+    /// Returns a map of car IDs to asset data, like the actual API
+    pub async fn all_car_assets(&self) -> Result<HashMap<u32, car::CarAssets>> {
+        let response: LinkResponseBody = self
+            .reqwest
+            .get("https://members-ng.iracing.com/data/car/assets")
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let raw_data = self
+            .reqwest
+            .get(response.link)
+            .send()
+            .await?
+            .json::<serde_json::Map<String, serde_json::Value>>()
+            .await?;
+
+        // Convert from a `serde_json::Map` to a `HashMap`
+        let map = raw_data
+            .into_iter()
+            .map(|(car_id, assets)| {
+                (
+                    car_id.parse().unwrap(),
+                    serde_json::from_value(assets).unwrap(),
+                )
+            })
+            .collect();
+        Ok(map)
     }
 }
 

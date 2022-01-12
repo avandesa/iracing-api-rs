@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use {
     chrono::{DateTime, Utc},
     serde::{Deserialize, Serialize},
@@ -41,3 +42,20 @@ pub struct CarType {
 }
 
 // TODO: car assets, if/when they fix the response serialization
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CarAssets {
+    car_id: u32,
+    detail_copy: String,
+    detail_screen_shot_images: String,
+    detail_techspecs_copy: Option<String>,
+    folder: PathBuf,
+    gallery_images: Option<String>,
+    gallery_prefix: Option<String>,
+    group_image: Option<String>,
+    group_name: Option<String>,
+    large_image: PathBuf,
+    logo: Option<PathBuf>,
+    small_image: Option<PathBuf>,
+    sponsor_logo: Option<String>,
+    template_path: Option<PathBuf>,
+}

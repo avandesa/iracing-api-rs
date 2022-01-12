@@ -9,7 +9,7 @@ will be progressively added.
 - [x] Session results
 - [x] Season results
 - [x] Cars
-- [ ] Car assets
+- [x] Car assets
 - [ ] car class
 - [ ] league
 - [ ] lookup
