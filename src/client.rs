@@ -1,5 +1,5 @@
 use crate::model::{auth::*, *};
-use {color_eyre::eyre::Result, reqwest::Client, serde::Deserialize, thiserror::Error};
+use {eyre::Result, reqwest::Client, serde::Deserialize, thiserror::Error};
 
 #[derive(Deserialize, Debug, Clone)]
 struct LinkResponseBody {
