@@ -33,7 +33,10 @@ impl IracingApiClient {
     /// Panics if the HTTP response from iRacing is malformed
     pub async fn new(email: &str, password: &str) -> Result<Self, ClientInitError> {
         // Initialize a reqwest client with a cookie store enabled
-        let reqwest = Client::builder().cookie_store(true).build()?;
+        let reqwest = Client::builder()
+            .cookie_store(true)
+            .build()
+            .map_err(ClientInitError::ReqwestInitError)?;
 
         // Attempt to authenticate with iRacing
         let auth_response = reqwest
@@ -43,9 +46,11 @@ impl IracingApiClient {
                 password: password.to_string(),
             })
             .send()
-            .await?
+            .await
+            .map_err(ClientInitError::ConnectionFailure)?
             .json::<serde_json::Value>()
-            .await?;
+            .await
+            .map_err(ClientInitError::ConnectionFailure)?;
 
         match AuthResponse::from_json(auth_response) {
             AuthResponse::Success(auth) => Ok(IracingApiClient { reqwest, auth }),
@@ -128,7 +133,9 @@ impl IracingApiClient {
 #[derive(Error, Debug)]
 pub enum ClientInitError {
     #[error("Cannot initialize HTTP client")]
-    ReqwestError(#[from] reqwest::Error),
+    ReqwestInitError(reqwest::Error),
+    #[error("Connection failure")]
+    ConnectionFailure(reqwest::Error),
     #[error("Authentication with iRacing failed")]
     AuthenticationFailure(#[from] AuthError),
 }
